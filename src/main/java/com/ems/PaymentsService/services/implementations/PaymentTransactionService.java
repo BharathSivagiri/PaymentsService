@@ -113,26 +113,6 @@ public class PaymentTransactionService {
         userBankAccountRepository.save(account);
         log.info("Bank account balance updated for account ID: {}", account.getAccountId());
     }
-    private void storePaymentDataInEventsService(PaymentTransactionModel model) {
-        String url = eventsServiceUrl + "/api/events/" + model.getEventId() + "/registration";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<PaymentTransactionModel> request = new HttpEntity<>(model, headers);
-
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Payment data successfully stored in EventsService for event ID: {}", model.getEventId());
-            } else {
-                log.error("Failed to store payment data in EventsService. Status code: {}", response.getStatusCodeValue());
-                throw new BusinessValidationException("Failed to update event with payment information");
-            }
-        } catch (Exception e) {
-            log.error("Error occurred while storing payment data in EventsService", e);
-            throw new BusinessValidationException("Failed to communicate with EventsService");
-        }
-    }
 
     private void registerForEventInEventsService(PaymentTransactionModel model) {
         String url = eventsServiceUrl + "/ems/events/registration";
