@@ -14,3 +14,11 @@ CREATE TABLE user_bank_account (
 describe user_bank_account;
 
 select * from user_bank_account;
+
+INSERT INTO user_bank_account (user_name, user_account_no, account_balance, created_by, created_date, record_status, last_updated_date, last_updated_by)
+VALUES
+('John Doe', 'ACC001', 5000.00, 'System', CURRENT_TIMESTAMP, 'ACTIVE', CURRENT_TIMESTAMP, 'System'),
+('Jane Smith', 'ACC002', 3500.50, 'System', CURRENT_TIMESTAMP, 'ACTIVE', CURRENT_TIMESTAMP, 'System'),
+('Mike Johnson', 'ACC003', 2750.75, 'System', CURRENT_TIMESTAMP, 'ACTIVE', CURRENT_TIMESTAMP, 'System'),
+('Sarah Brown', 'ACC004', 4200.25, 'System', CURRENT_TIMESTAMP, 'ACTIVE', CURRENT_TIMESTAMP, 'System'),
+('Alex Wilson', 'ACC005', 6100.00, 'System', CURRENT_TIMESTAMP, 'ACTIVE', CURRENT_TIMESTAMP, 'System');

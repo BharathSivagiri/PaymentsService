@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_bank_account")
@@ -17,6 +16,7 @@ public class UserBankAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private int accountId;
 
     @Column(name = "user_name", nullable = false, length = 20)
@@ -32,7 +32,7 @@ public class UserBankAccount {
     private String createdBy;
 
     @Column(name = "created_date", nullable = false)
-    private LocalDateTime createdDate;
+    private String createdDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "record_status")
