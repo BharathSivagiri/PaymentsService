@@ -122,10 +122,11 @@ public class PaymentTransactionService {
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("transactionId", model.getId());
         requestBody.put("eventId", model.getEventId());
+        requestBody.put("userId", model.getUserId());
         requestBody.put("createdBy", model.getCreatedBy());
 
-        log.info("Sending registration request to EventsService - transactionId: {}, eventId: {}",
-                model.getId(), model.getEventId());
+        log.info("Sending registration request to EventsService - transactionId: {}, eventId: {}, userId: {}",
+                model.getId(), model.getEventId(), model.getUserId());
 
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
 
@@ -134,7 +135,7 @@ public class PaymentTransactionService {
             log.error("Failed to register for event. Response status: {}", response.getStatusCode());
             throw new BusinessValidationException("Failed to register for event");
         }
-
         log.info("Successfully registered for event. Response: {}", response.getBody());
     }
+
 }

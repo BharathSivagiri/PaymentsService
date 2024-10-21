@@ -23,8 +23,6 @@ public class PaymentTransactionMapper {
         entity.setBankId(model.getBankId() != null ? Integer.parseInt(model.getBankId()) : null);
         entity.setTransactionType(TransactionType.fromString(model.getTransactionType()));
         entity.setPaymentStatus(PaymentStatus.fromString(model.getPaymentStatus()));
-
-        // Add these lines to set the missing fields
         entity.setCreatedBy("SYSTEM");
         entity.setCreatedDate(LocalDateTime.now().toString());
         entity.setLastUpdatedBy("SYSTEM");

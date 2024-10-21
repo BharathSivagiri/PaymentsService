@@ -19,6 +19,9 @@ public class PaymentTransactionModel {
     @NotBlank(message = "Event ID is required")
     private String eventId;
 
+    @NotBlank(message = "User ID is required")
+    private String userId;
+
     private String bankId;
 
     @NotBlank(message = "Transaction type is required")
