@@ -3,7 +3,6 @@ package com.ems.PaymentsService.controller;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 import com.ems.PaymentsService.services.implementations.PaymentTransactionService;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
