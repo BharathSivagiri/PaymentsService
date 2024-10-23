@@ -50,29 +50,39 @@ public class PaymentTransactionService {
         log.info("Creating payment transaction for event ID: {}", model.getEventId());
         validatePaymentTransaction(model);
 
+        // Set dates before initial save
+        String currentDateTime = String.valueOf(LocalDateTime.now());
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
+        entity.setCreatedDate(currentDateTime);
+        entity.setLastUpdatedDate(currentDateTime);
+
+        // Save and commit payment transaction
         entity = paymentTransactionRepository.save(entity);
+        paymentTransactionRepository.flush();
 
-        String transactionId = String.valueOf(entity.getId());
-        model.setId(transactionId);
-
+        // Set transaction ID in model
+        String transactionId = String.valueOf(entity.getTransactionId());
+        model.setTransactionId(transactionId);
         log.info("Payment transaction created with ID: {}", transactionId);
 
-        registerForEventInEventsService(model);
-
+        // Process bank account operations
         UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
 
-        updateBankAccountBalance(userBankAccount, model);
-
-        entity.setCreatedDate(String.valueOf(LocalDateTime.now()));
-        entity.setLastUpdatedDate(String.valueOf(LocalDateTime.now()));
-        entity = paymentTransactionRepository.save(entity);
-
-        PaymentTransactionModel response = paymentTransactionMapper.toModel(entity);
-        log.info("Payment transaction process completed for ID: {}", response.getId());
-        return response;
+        if ("NOT_PAID".equals(model.getPaymentStatus()) || "PAY_CANCELLED".equals(model.getPaymentStatus())) {
+            double amount = Double.parseDouble(model.getAmountPaid());
+            userBankAccount.setAccountBalance(userBankAccount.getAccountBalance() + amount);
+            userBankAccount.setLastUpdatedDate(currentDateTime);
+            userBankAccountRepository.save(userBankAccount);
+            log.info("Amount credited back to account for cancelled payment");
+        } else {
+            updateBankAccountBalance(userBankAccount, model);
+            registerForEventInEventsService(model);
+            log.info("Payment processed and event registration completed");
+        }
+        return paymentTransactionMapper.toModel(entity);
     }
+
 
     private void validatePaymentTransaction(PaymentTransactionModel model) {
         log.debug("Validating payment transaction");
@@ -122,13 +132,11 @@ public class PaymentTransactionService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("transactionId", model.getId());
+        requestBody.put("transactionId", model.getTransactionId());
         requestBody.put("eventId", model.getEventId());
         requestBody.put("userId", model.getUserId());
         requestBody.put("createdBy", model.getCreatedBy());
-
-        log.info("Sending registration request to EventsService - transactionId: {}, eventId: {}, userId: {}",
-                model.getId(), model.getEventId(), model.getUserId());
+        requestBody.put("paymentStatus", model.getPaymentStatus());
 
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
 

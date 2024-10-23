@@ -28,7 +28,7 @@ public class PaymentTransactionController {
 
         PaymentTransactionModel createdTransaction = paymentTransactionService.createPaymentTransaction(paymentTransaction);
 
-        log.info("Payment transaction created with ID: {}", createdTransaction.getId());
+        log.info("Payment transaction created with ID: {}", createdTransaction.getTransactionId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ErrorMessages.SUCCESSFULLY_REGISTERED);

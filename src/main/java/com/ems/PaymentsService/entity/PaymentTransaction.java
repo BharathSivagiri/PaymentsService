@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class PaymentTransaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @Column(name = "id", nullable = false)
+    private String transactionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_mode")
