@@ -22,13 +22,13 @@ public class PaymentTransactionController {
     private static final Logger log = LoggerFactory.getLogger(PaymentTransactionController.class);
 
         @Autowired
-        private PaymentTransactionService paymentTransactionService;
+        PaymentTransactionService paymentTransactionService;
 
         @Autowired
-        private RestTemplate restTemplate;
+        RestTemplate restTemplate;
 
         @Value("${events.service.url}")
-        private String eventsServiceUrl;
+        String eventsServiceUrl;
 
     @PostMapping("/registration")
     public ResponseEntity<String> registerForEvent(@RequestBody PaymentTransactionModel paymentTransaction) {
@@ -42,6 +42,5 @@ public class PaymentTransactionController {
                 .body("Successfully registered for event with ID: " + paymentTransaction.getEventId() +
                         ". Transaction ID: " + createdTransaction.getId());
     }
-
 }
 
