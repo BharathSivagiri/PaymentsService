@@ -9,6 +9,8 @@ import com.ems.PaymentsService.mapper.PaymentTransactionMapper;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.repositories.UserBankAccountRepository;
+import com.ems.PaymentsService.utility.constants.AppConstants;
+import com.ems.PaymentsService.utility.constants.ErrorMessages;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +61,7 @@ public class PaymentTransactionService {
         registerForEventInEventsService(model);
 
         UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
-                .orElseThrow(() -> new DataNotFoundException("Bank account not found for ID: " + model.getBankId()));
+                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
 
         updateBankAccountBalance(userBankAccount, model);
 
@@ -76,24 +78,24 @@ public class PaymentTransactionService {
         log.debug("Validating payment transaction");
 
         if (model.getAmountPaid() == null || Double.parseDouble(model.getAmountPaid()) <= 0) {
-            throw new BusinessValidationException("Amount paid must be greater than zero");
+            throw new BusinessValidationException(ErrorMessages.AMOUNT_VALIDATION);
         }
 
         if (model.getEventId() == null || model.getEventId().trim().isEmpty()) {
-            throw new BusinessValidationException("Event ID is required");
+            throw new BusinessValidationException(ErrorMessages.EVENT_ID_NOT_FOUND);
         }
 
         if (model.getPaymentMode() == null) {
-            throw new BusinessValidationException("Payment mode is required");
+            throw new BusinessValidationException(ErrorMessages.PAYMENT_MODE_NOT_FOUND);
         }
 
         if (model.getTransactionType() == null) {
-            throw new BusinessValidationException("Transaction type is required");
+            throw new BusinessValidationException(ErrorMessages.TRANSACTION_TYPE_NOT_FOUND);
         }
 
 
         if (model.getPaymentStatus() == null) {
-            throw new BusinessValidationException("Payment status is required");
+            throw new BusinessValidationException(ErrorMessages.PAYMENT_STATUS_NOT_FOUND);
         }
 
         log.debug("Payment transaction validation completed");
@@ -103,7 +105,7 @@ public class PaymentTransactionService {
         double amount = Double.parseDouble(model.getAmountPaid());
         if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType())) {
             if (account.getAccountBalance() < amount) {
-                throw new BusinessValidationException("Insufficient balance in the account");
+                throw new BusinessValidationException(ErrorMessages.INSUFFICIENT_BALANCE);
             }
             account.setAccountBalance(account.getAccountBalance() - amount);
         } else {
@@ -133,7 +135,7 @@ public class PaymentTransactionService {
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
         if (!response.getStatusCode().is2xxSuccessful()) {
             log.error("Failed to register for event. Response status: {}", response.getStatusCode());
-            throw new BusinessValidationException("Failed to register for event");
+            throw new BusinessValidationException(ErrorMessages.FAILED_REGISTRATION);
         }
         log.info("Successfully registered for event. Response: {}", response.getBody());
     }
