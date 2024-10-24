@@ -31,24 +31,26 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class PaymentTransactionService {
+public class PaymentTransactionService
+{
     @Autowired
-    private PaymentTransactionRepository paymentTransactionRepository;
+    PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired
-    private UserBankAccountRepository userBankAccountRepository;
+    UserBankAccountRepository userBankAccountRepository;
 
     @Autowired
-    private PaymentTransactionMapper paymentTransactionMapper;
+    PaymentTransactionMapper paymentTransactionMapper;
 
     @Autowired
-    private RestTemplate restTemplate;
+    RestTemplate restTemplate;
 
     @Value("${events.service.url}")
-    private String eventsServiceUrl;
+    String eventsServiceUrl;
 
     @Transactional
-    public PaymentTransactionModel createPaymentTransaction(PaymentTransactionModel model) {
+    public PaymentTransactionModel createPaymentTransaction(PaymentTransactionModel model)
+    {
         log.info("Creating payment transaction for event ID: {}", model.getEventId());
         validatePaymentTransaction(model);
 
@@ -66,14 +68,17 @@ public class PaymentTransactionService {
         UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
 
-        if ("NOT_PAID".equals(model.getPaymentStatus()) || "PAY_CANCELLED".equals(model.getPaymentStatus())) {
+        if ("NOT_PAID".equals(model.getPaymentStatus()) || "PAY_CANCELLED".equals(model.getPaymentStatus()))
+        {
             double amount = Double.parseDouble(model.getAmountPaid());
             userBankAccount.setAccountBalance(userBankAccount.getAccountBalance() + amount);
             userBankAccount.setLastUpdatedDate(currentDateTime);
             userBankAccountRepository.save(userBankAccount);
             log.info("Amount credited back to account for cancelled payment");
             cancelEventRegistration(model);
-        } else {
+        }
+        else
+        {
             updateBankAccountBalance(userBankAccount, model);
             registerForEventInEventsService(model);
             log.info("Payment processed and event registration completed");
@@ -81,7 +86,8 @@ public class PaymentTransactionService {
         return paymentTransactionMapper.toModel(entity);
     }
 
-    private void checkExistingRegistration(PaymentTransactionModel model) {
+    private void checkExistingRegistration(PaymentTransactionModel model)
+    {
         String url = eventsServiceUrl + "/ems/events/registration";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -94,18 +100,23 @@ public class PaymentTransactionService {
 
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
 
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        try
+        {
+            restTemplate.postForEntity(url, request, String.class);
             log.info("Registration check completed successfully");
-        } catch (Exception e) {
-            if (e.getMessage().contains("already registered")) {
-                throw new BusinessValidationException("User already registered for this event");
+        }
+        catch (Exception e)
+        {
+            if (e.getMessage().contains("already registered"))
+            {
+                throw new BusinessValidationException(ErrorMessages.REG_VALIDATION);
             }
             throw e;
         }
     }
 
-    private void cancelEventRegistration(PaymentTransactionModel model) {
+    private void cancelEventRegistration(PaymentTransactionModel model)
+    {
         String url = eventsServiceUrl + "/ems/events/registrations/cancel";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -120,48 +131,60 @@ public class PaymentTransactionService {
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
-        if (!response.getStatusCode().is2xxSuccessful()) {
+        if (!response.getStatusCode().is2xxSuccessful())
+        {
             log.error("Failed to cancel registration. Response status: {}", response.getStatusCode());
-            throw new BusinessValidationException("Failed to cancel registration");
+            throw new BusinessValidationException(ErrorMessages.FAILED_REG);
         }
         log.info("Successfully cancelled event registration. Response: {}", response.getBody());
     }
 
-    private void validatePaymentTransaction(PaymentTransactionModel model) {
+    private void validatePaymentTransaction(PaymentTransactionModel model)
+    {
         log.debug("Validating payment transaction");
 
-        if (model.getAmountPaid() == null || Double.parseDouble(model.getAmountPaid()) <= 0) {
+        if (model.getAmountPaid() == null || Double.parseDouble(model.getAmountPaid()) <= 0)
+        {
             throw new BusinessValidationException(ErrorMessages.AMOUNT_VALIDATION);
         }
 
-        if (model.getEventId() == null || model.getEventId().trim().isEmpty()) {
+        if (model.getEventId() == null || model.getEventId().trim().isEmpty())
+        {
             throw new BusinessValidationException(ErrorMessages.EVENT_ID_NOT_FOUND);
         }
 
-        if (model.getPaymentMode() == null) {
+        if (model.getPaymentMode() == null)
+        {
             throw new BusinessValidationException(ErrorMessages.PAYMENT_MODE_NOT_FOUND);
         }
 
-        if (model.getTransactionType() == null) {
+        if (model.getTransactionType() == null)
+        {
             throw new BusinessValidationException(ErrorMessages.TRANSACTION_TYPE_NOT_FOUND);
         }
 
 
-        if (model.getPaymentStatus() == null) {
+        if (model.getPaymentStatus() == null)
+        {
             throw new BusinessValidationException(ErrorMessages.PAYMENT_STATUS_NOT_FOUND);
         }
 
         log.debug("Payment transaction validation completed");
     }
 
-    private void updateBankAccountBalance(UserBankAccount account, PaymentTransactionModel model) {
+    private void updateBankAccountBalance(UserBankAccount account, PaymentTransactionModel model)
+    {
         double amount = Double.parseDouble(model.getAmountPaid());
-        if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType())) {
-            if (account.getAccountBalance() < amount) {
+        if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType()))
+        {
+            if (account.getAccountBalance() < amount)
+            {
                 throw new BusinessValidationException(ErrorMessages.INSUFFICIENT_BALANCE);
             }
             account.setAccountBalance(account.getAccountBalance() - amount);
-        } else {
+        }
+        else
+        {
             account.setAccountBalance(account.getAccountBalance() + amount);
         }
         account.setLastUpdatedDate(String.valueOf(LocalDateTime.now()));
@@ -169,7 +192,8 @@ public class PaymentTransactionService {
         log.info("Bank account balance updated for account ID: {}", account.getAccountId());
     }
 
-    private void registerForEventInEventsService(PaymentTransactionModel model) {
+    private void registerForEventInEventsService(PaymentTransactionModel model)
+    {
         String url = eventsServiceUrl + "/ems/events/registration";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -184,18 +208,21 @@ public class PaymentTransactionService {
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-        if (!response.getStatusCode().is2xxSuccessful()) {
+        if (!response.getStatusCode().is2xxSuccessful())
+        {
             log.error("Failed to register for event. Response status: {}", response.getStatusCode());
             throw new BusinessValidationException(ErrorMessages.FAILED_REGISTRATION);
         }
         log.info("Successfully registered for event. Response: {}", response.getBody());
     }
 
-    public List<TransactionViewDTO> getAllTransactions() {
+    public List<TransactionViewDTO> getAllTransactions()
+    {
         log.info("Retrieving all payment transactions");
         List<PaymentTransaction> transactions = paymentTransactionRepository.findAll();
 
-        if (transactions.isEmpty()) {
+        if (transactions.isEmpty())
+        {
             log.error("No transactions found in the system");
             throw new DataNotFoundException(ErrorMessages.TRANSACTIONS_NOT_FOUND);
         }

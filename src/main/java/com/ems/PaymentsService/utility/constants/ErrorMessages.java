@@ -12,4 +12,12 @@ public class ErrorMessages
     public static final String INSUFFICIENT_BALANCE = "Insufficient balance in bank account";
     public static final String FAILED_REGISTRATION = "Failed to register for event";
     public static final String TRANSACTIONS_NOT_FOUND = "No transactions available";
+    public static final String SUCCESSFULLY_CANCELLED = "Payment cancelled successfully";
+    public static final String REG_VALIDATION = "User already registered for this event";
+    public static final String FAILED_REG = "Failed to cancel registration";
+
+    public static final String RECORD_NOT_FOUND = "Record not found";
+    public static final String INVALID_PAYMENT_MODE = "Payment mode not found";
+    public static final String INVALID_PAYMENT_STATUS = "Payment status not found";
+    public static final String INVALID_TRANSACTION_TYPE = "Transaction type not found";
 }

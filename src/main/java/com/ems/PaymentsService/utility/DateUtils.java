@@ -1,11 +1,13 @@
 package com.ems.PaymentsService.utility;
 
+import com.ems.PaymentsService.utility.constants.AppConstants;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class DateUtils
 {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(AppConstants.DATE_FORMAT);
 
     public static LocalDate convertToDate(String dateString)
     {

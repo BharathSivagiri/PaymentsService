@@ -19,7 +19,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/ems/events")
 @Tag(name = "Payment Transactions API", description = "API for managing payment transactions")
-public class PaymentTransactionController {
+public class PaymentTransactionController
+{
 
     private static final Logger log = LoggerFactory.getLogger(PaymentTransactionController.class);
 
@@ -28,7 +29,8 @@ public class PaymentTransactionController {
 
     @PostMapping("/registration")
     @Operation(summary = "Register for event", description = "Register for an event and create a payment transaction")
-    public ResponseEntity<String> registerForEvent(@RequestBody PaymentTransactionModel paymentTransaction) {
+    public ResponseEntity<String> registerForEvent(@RequestBody PaymentTransactionModel paymentTransaction)
+    {
         log.info("Received registration request for event ID: {}", paymentTransaction.getEventId());
 
         paymentTransactionService.createPaymentTransaction(paymentTransaction);
@@ -41,19 +43,19 @@ public class PaymentTransactionController {
 
     @PostMapping("/registration/cancel")
     @Operation(summary = "Cancel payment transaction", description = "Cancel a payment transaction")
-    public ResponseEntity<String> cancelPaymentTransaction(@RequestBody PaymentTransactionModel model) {
+    public ResponseEntity<String> cancelPaymentTransaction(@RequestBody PaymentTransactionModel model)
+    {
         paymentTransactionService.createPaymentTransaction(model);
-        return ResponseEntity.ok("Payment cancelled successfully");
+        return ResponseEntity.ok(ErrorMessages.SUCCESSFULLY_CANCELLED);
     }
 
     @GetMapping("/transactions")
     @Operation(summary = "Get all payment transactions", description = "Retrieve a list of all payment transactions")
-    public ResponseEntity<List<TransactionViewDTO>> getAllTransactions() {
+    public ResponseEntity<List<TransactionViewDTO>> getAllTransactions()
+    {
         log.info("Fetching all payment transactions");
         List<TransactionViewDTO> transactions = paymentTransactionService.getAllTransactions();
         return ResponseEntity.ok(transactions);
     }
-
-
 }
 

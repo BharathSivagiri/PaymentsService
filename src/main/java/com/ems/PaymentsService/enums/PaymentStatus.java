@@ -1,5 +1,7 @@
 package com.ems.PaymentsService.enums;
 
+import com.ems.PaymentsService.utility.constants.ErrorMessages;
+
 public enum PaymentStatus
 {
     PAID("paid"),
@@ -27,6 +29,6 @@ public enum PaymentStatus
                 return paymentStatus;
             }
         }
-        throw new IllegalArgumentException("No constant with text " + status + " found");
+        throw new IllegalArgumentException(ErrorMessages.INVALID_PAYMENT_STATUS);
     }
 }

@@ -1,5 +1,7 @@
 package com.ems.PaymentsService.enums;
 
+import com.ems.PaymentsService.utility.constants.ErrorMessages;
+
 public enum PaymentMode
 {
     UPI("upi"),
@@ -27,7 +29,7 @@ public enum PaymentMode
                 return paymentMode;
             }
         }
-        throw new IllegalArgumentException("No constant with text " + mode + " found");
+        throw new IllegalArgumentException(ErrorMessages.INVALID_PAYMENT_MODE);
     }
 }
 

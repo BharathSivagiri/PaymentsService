@@ -4,7 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
-public class PaymentTransactionModel {
+public class PaymentTransactionModel
+{
 
     private String id;
 

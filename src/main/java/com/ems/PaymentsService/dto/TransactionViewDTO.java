@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class TransactionViewDTO {
+public class TransactionViewDTO
+{
     private String paymentMode;
     private String amountPaid;
     private String eventId;
@@ -15,7 +16,8 @@ public class TransactionViewDTO {
     private String transactionType;
     private String paymentStatus;
 
-    public TransactionViewDTO(PaymentTransactionModel model) {
+    public TransactionViewDTO(PaymentTransactionModel model)
+    {
         this.paymentMode = model.getPaymentMode();
         this.amountPaid = model.getAmountPaid();
         this.eventId = model.getEventId();
