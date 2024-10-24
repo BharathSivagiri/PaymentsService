@@ -11,4 +11,5 @@ public class ErrorMessages
     public static final String TRANSACTION_TYPE_NOT_FOUND = "Transaction type not found";
     public static final String INSUFFICIENT_BALANCE = "Insufficient balance in bank account";
     public static final String FAILED_REGISTRATION = "Failed to register for event";
+    public static final String TRANSACTIONS_NOT_FOUND = "No transactions available";
 }

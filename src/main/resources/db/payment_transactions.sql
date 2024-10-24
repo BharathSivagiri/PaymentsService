@@ -15,6 +15,6 @@ CREATE TABLE payment_transactions (
   CONSTRAINT bank_id FOREIGN KEY (bank_id) REFERENCES user_bank_account (id)
 );
 
-describe user_transactions;
+describe payment_transactions;
 
-select * from user_transactions;
+select * from payment_transactions;

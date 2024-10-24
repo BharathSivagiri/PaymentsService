@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class PaymentTransactionModel {
 
-    private String transactionId;
+    private String id;
 
     @NotBlank(message = "Payment mode is required")
     @Pattern(regexp = "^(upi|creditcard|debitcard)$", message = "Invalid payment mode")

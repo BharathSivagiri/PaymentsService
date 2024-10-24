@@ -1,5 +1,6 @@
 package com.ems.PaymentsService.services.implementations;
 
+import com.ems.PaymentsService.dto.TransactionViewDTO;
 import com.ems.PaymentsService.entity.PaymentTransaction;
 import com.ems.PaymentsService.entity.UserBankAccount;
 import com.ems.PaymentsService.enums.TransactionType;
@@ -9,7 +10,6 @@ import com.ems.PaymentsService.mapper.PaymentTransactionMapper;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.repositories.UserBankAccountRepository;
-import com.ems.PaymentsService.utility.constants.AppConstants;
 import com.ems.PaymentsService.utility.constants.ErrorMessages;
 
 import jakarta.transaction.Transactional;
@@ -25,7 +25,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -50,22 +52,17 @@ public class PaymentTransactionService {
         log.info("Creating payment transaction for event ID: {}", model.getEventId());
         validatePaymentTransaction(model);
 
-        // Set dates before initial save
         String currentDateTime = String.valueOf(LocalDateTime.now());
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
         entity.setCreatedDate(currentDateTime);
         entity.setLastUpdatedDate(currentDateTime);
 
-        // Save and commit payment transaction
         entity = paymentTransactionRepository.save(entity);
         paymentTransactionRepository.flush();
-
-        // Set transaction ID in model
-        String transactionId = String.valueOf(entity.getTransactionId());
-        model.setTransactionId(transactionId);
+        String transactionId = String.valueOf(entity.getId());
+        model.setId(transactionId);
         log.info("Payment transaction created with ID: {}", transactionId);
 
-        // Process bank account operations
         UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
 
@@ -75,6 +72,7 @@ public class PaymentTransactionService {
             userBankAccount.setLastUpdatedDate(currentDateTime);
             userBankAccountRepository.save(userBankAccount);
             log.info("Amount credited back to account for cancelled payment");
+            cancelEventRegistration(model);
         } else {
             updateBankAccountBalance(userBankAccount, model);
             registerForEventInEventsService(model);
@@ -83,6 +81,51 @@ public class PaymentTransactionService {
         return paymentTransactionMapper.toModel(entity);
     }
 
+    private void checkExistingRegistration(PaymentTransactionModel model) {
+        String url = eventsServiceUrl + "/ems/events/registration";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("eventId", model.getEventId());
+        requestBody.put("userId", model.getUserId());
+        requestBody.put("createdBy", model.getCreatedBy());
+        requestBody.put("paymentStatus", model.getPaymentStatus());
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            log.info("Registration check completed successfully");
+        } catch (Exception e) {
+            if (e.getMessage().contains("already registered")) {
+                throw new BusinessValidationException("User already registered for this event");
+            }
+            throw e;
+        }
+    }
+
+    private void cancelEventRegistration(PaymentTransactionModel model) {
+        String url = eventsServiceUrl + "/ems/events/registrations/cancel";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("transactionId", model.getId());
+        requestBody.put("eventId", model.getEventId());
+        requestBody.put("userId", model.getUserId());
+        requestBody.put("createdBy", model.getCreatedBy());
+        requestBody.put("paymentStatus", model.getPaymentStatus());
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.error("Failed to cancel registration. Response status: {}", response.getStatusCode());
+            throw new BusinessValidationException("Failed to cancel registration");
+        }
+        log.info("Successfully cancelled event registration. Response: {}", response.getBody());
+    }
 
     private void validatePaymentTransaction(PaymentTransactionModel model) {
         log.debug("Validating payment transaction");
@@ -132,7 +175,7 @@ public class PaymentTransactionService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("transactionId", model.getTransactionId());
+        requestBody.put("transactionId", model.getId());
         requestBody.put("eventId", model.getEventId());
         requestBody.put("userId", model.getUserId());
         requestBody.put("createdBy", model.getCreatedBy());
@@ -146,6 +189,21 @@ public class PaymentTransactionService {
             throw new BusinessValidationException(ErrorMessages.FAILED_REGISTRATION);
         }
         log.info("Successfully registered for event. Response: {}", response.getBody());
+    }
+
+    public List<TransactionViewDTO> getAllTransactions() {
+        log.info("Retrieving all payment transactions");
+        List<PaymentTransaction> transactions = paymentTransactionRepository.findAll();
+
+        if (transactions.isEmpty()) {
+            log.error("No transactions found in the system");
+            throw new DataNotFoundException(ErrorMessages.TRANSACTIONS_NOT_FOUND);
+        }
+        log.info("Found {} transactions", transactions.size());
+        return transactions.stream()
+                .map(paymentTransactionMapper::toModel)
+                .map(TransactionViewDTO::new)
+                .collect(Collectors.toList());
     }
 
 }

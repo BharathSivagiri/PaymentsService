@@ -17,7 +17,6 @@ public class PaymentTransactionMapper {
     public PaymentTransaction toEntity(PaymentTransactionModel model) {
         PaymentTransaction entity = new PaymentTransaction();
 
-        entity.setTransactionId(model.getTransactionId());
         entity.setPaymentMode(PaymentMode.fromString(model.getPaymentMode()));
         entity.setAmountPaid(Double.parseDouble(model.getAmountPaid()));
         entity.setEventId(model.getEventId());
@@ -36,7 +35,6 @@ public class PaymentTransactionMapper {
     public PaymentTransactionModel toModel(PaymentTransaction entity) {
         PaymentTransactionModel model = new PaymentTransactionModel();
 
-        model.setTransactionId(entity.getTransactionId());
         model.setPaymentMode(entity.getPaymentMode().name());
         model.setAmountPaid(String.valueOf(entity.getAmountPaid()));
         model.setEventId(entity.getEventId());
@@ -46,4 +44,23 @@ public class PaymentTransactionMapper {
 
         return model;
     }
+
+    public PaymentTransaction toRefundEntity(PaymentTransaction originalTransaction) {
+        PaymentTransaction refundTransaction = new PaymentTransaction();
+
+        refundTransaction.setEventId(originalTransaction.getEventId());
+        refundTransaction.setAmountPaid(originalTransaction.getAmountPaid());
+        refundTransaction.setPaymentMode(originalTransaction.getPaymentMode());
+        refundTransaction.setTransactionType(TransactionType.CREDIT);
+        refundTransaction.setPaymentStatus(PaymentStatus.PAID);
+        refundTransaction.setBankId(originalTransaction.getBankId());
+        refundTransaction.setCreatedBy("SYSTEM");
+        refundTransaction.setCreatedDate(LocalDateTime.now().toString());
+        refundTransaction.setLastUpdatedBy("SYSTEM");
+        refundTransaction.setLastUpdatedDate(LocalDateTime.now().toString());
+        refundTransaction.setRecordStatus(DBRecordStatus.ACTIVE);
+
+        return refundTransaction;
+    }
+
 }
