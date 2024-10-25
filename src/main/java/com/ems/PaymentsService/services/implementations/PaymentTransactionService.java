@@ -116,6 +116,29 @@ public class PaymentTransactionService
         log.info("Bank account balance updated for account ID: {}", account.getAccountId());
     }
 
+    @Transactional
+    public PaymentTransactionModel createRefundTransaction(PaymentTransactionModel model) {
+        log.info("Processing refund for event ID: {}", model.getEventId());
+        validatePaymentTransaction(model);
+
+        UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
+                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
+
+        UserBankAccount adminAccount = userBankAccountRepository.findById(1)
+                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
+
+        double amount = Double.parseDouble(model.getAmountPaid());
+
+        adminAccount.setAccountBalance(adminAccount.getAccountBalance() - amount);
+        userBankAccountRepository.save(adminAccount);
+
+        userBankAccount.setAccountBalance(userBankAccount.getAccountBalance() + amount);
+        userBankAccountRepository.save(userBankAccount);
+
+        PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
+        return paymentTransactionMapper.toModel(paymentTransactionRepository.save(entity));
+    }
+
     public List<TransactionViewDTO> getAllTransactions()
     {
         log.info("Retrieving all payment transactions");

@@ -36,6 +36,15 @@ public class PaymentTransactionController
         return ResponseEntity.ok(transactionId);
     }
 
+    @PostMapping("/payment/refund")
+    public ResponseEntity<Integer> processRefund(@RequestBody PaymentTransactionModel request) {
+        request.setTransactionType("CREDIT");
+        PaymentTransactionModel response = paymentTransactionService.createRefundTransaction(request);
+        Integer transactionId = paymentTransactionRepository.findFirstByOrderByIdDesc().getId();
+        return ResponseEntity.ok(transactionId);
+    }
+
+
     @GetMapping("/transactions")
     @Operation(summary = "Get all payment transactions", description = "Retrieve a list of all payment transactions")
     public ResponseEntity<List<TransactionViewDTO>> getAllTransactions()

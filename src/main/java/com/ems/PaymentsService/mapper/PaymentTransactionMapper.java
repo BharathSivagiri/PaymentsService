@@ -48,23 +48,4 @@ public class PaymentTransactionMapper {
         return model;
     }
 
-    public PaymentTransaction toRefundEntity(PaymentTransaction originalTransaction)
-    {
-        PaymentTransaction refundTransaction = new PaymentTransaction();
-
-        refundTransaction.setEventId(originalTransaction.getEventId());
-        refundTransaction.setAmountPaid(originalTransaction.getAmountPaid());
-        refundTransaction.setPaymentMode(originalTransaction.getPaymentMode());
-        refundTransaction.setTransactionType(TransactionType.CREDIT);
-        refundTransaction.setPaymentStatus(PaymentStatus.PAID);
-        refundTransaction.setBankId(originalTransaction.getBankId());
-        refundTransaction.setCreatedBy(AppConstants.SYSTEM_USER);
-        refundTransaction.setCreatedDate(LocalDateTime.now().toString());
-        refundTransaction.setLastUpdatedBy(AppConstants.SYSTEM_USER);
-        refundTransaction.setLastUpdatedDate(LocalDateTime.now().toString());
-        refundTransaction.setRecordStatus(DBRecordStatus.ACTIVE);
-
-        return refundTransaction;
-    }
-
 }
