@@ -1,6 +1,7 @@
 package com.ems.PaymentsService.entity;
 
 import com.ems.PaymentsService.enums.DBRecordStatus;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,7 +13,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserBankAccount {
+public class UserBankAccount
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,47 +1,57 @@
 package com.ems.PaymentsService.controller;
 
+import com.ems.PaymentsService.dto.TransactionViewDTO;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
+import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.services.implementations.PaymentTransactionService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.client.RestTemplate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/ems/events")
 @Tag(name = "Payment Transactions API", description = "API for managing payment transactions")
-public class PaymentTransactionController {
+public class PaymentTransactionController
+{
 
     private static final Logger log = LoggerFactory.getLogger(PaymentTransactionController.class);
 
         @Autowired
-        private PaymentTransactionService paymentTransactionService;
+        PaymentTransactionService paymentTransactionService;
 
         @Autowired
-        private RestTemplate restTemplate;
+        PaymentTransactionRepository paymentTransactionRepository;
 
-        @Value("${events.service.url}")
-        private String eventsServiceUrl;
-
-    @PostMapping("/registration")
-    public ResponseEntity<String> registerForEvent(@RequestBody PaymentTransactionModel paymentTransaction) {
-        log.info("Received registration request for event ID: {}", paymentTransaction.getEventId());
-
-        PaymentTransactionModel createdTransaction = paymentTransactionService.createPaymentTransaction(paymentTransaction);
-
-        log.info("Payment transaction created with ID: {}", createdTransaction.getId());
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Successfully registered for event with ID: " + paymentTransaction.getEventId() +
-                        ". Transaction ID: " + createdTransaction.getId());
+    @PostMapping("/payment/process")
+    public ResponseEntity<Integer> processPayment(@RequestBody PaymentTransactionModel request) {
+        PaymentTransactionModel response = paymentTransactionService.createPaymentTransaction(request);
+        Integer transactionId = paymentTransactionRepository.findFirstByOrderByIdDesc().getId();
+        return ResponseEntity.ok(transactionId);
     }
 
+    @PostMapping("/payment/refund")
+    public ResponseEntity<Integer> processRefund(@RequestBody PaymentTransactionModel request) {
+        request.setTransactionType("CREDIT");
+        PaymentTransactionModel response = paymentTransactionService.createRefundTransaction(request);
+        Integer transactionId = paymentTransactionRepository.findFirstByOrderByIdDesc().getId();
+        return ResponseEntity.ok(transactionId);
+    }
+
+
+    @GetMapping("/transactions")
+    @Operation(summary = "Get all payment transactions", description = "Retrieve a list of all payment transactions")
+    public ResponseEntity<List<TransactionViewDTO>> getAllTransactions()
+    {
+        log.info("Fetching all payment transactions");
+        List<TransactionViewDTO> transactions = paymentTransactionService.getAllTransactions();
+        return ResponseEntity.ok(transactions);
+    }
 }
 

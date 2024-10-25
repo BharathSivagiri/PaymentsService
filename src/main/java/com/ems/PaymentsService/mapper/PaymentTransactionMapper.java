@@ -7,6 +7,7 @@ import com.ems.PaymentsService.enums.PaymentStatus;
 import com.ems.PaymentsService.enums.TransactionType;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 
+import com.ems.PaymentsService.utility.constants.AppConstants;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,8 @@ import java.time.LocalDateTime;
 @Component
 public class PaymentTransactionMapper {
 
-    public PaymentTransaction toEntity(PaymentTransactionModel model) {
+    public PaymentTransaction toEntity(PaymentTransactionModel model)
+    {
         PaymentTransaction entity = new PaymentTransaction();
 
         entity.setPaymentMode(PaymentMode.fromString(model.getPaymentMode()));
@@ -23,19 +25,19 @@ public class PaymentTransactionMapper {
         entity.setBankId(model.getBankId() != null ? Integer.parseInt(model.getBankId()) : null);
         entity.setTransactionType(TransactionType.fromString(model.getTransactionType()));
         entity.setPaymentStatus(PaymentStatus.fromString(model.getPaymentStatus()));
-        entity.setCreatedBy("SYSTEM");
+        entity.setCreatedBy(AppConstants.SYSTEM_USER);
         entity.setCreatedDate(LocalDateTime.now().toString());
-        entity.setLastUpdatedBy("SYSTEM");
+        entity.setLastUpdatedBy(AppConstants.SYSTEM_USER);
         entity.setLastUpdatedDate(LocalDateTime.now().toString());
         entity.setRecordStatus(DBRecordStatus.ACTIVE);
 
         return entity;
     }
 
-    public PaymentTransactionModel toModel(PaymentTransaction entity) {
+    public PaymentTransactionModel toModel(PaymentTransaction entity)
+    {
         PaymentTransactionModel model = new PaymentTransactionModel();
 
-        model.setId(String.valueOf(entity.getId()));
         model.setPaymentMode(entity.getPaymentMode().name());
         model.setAmountPaid(String.valueOf(entity.getAmountPaid()));
         model.setEventId(entity.getEventId());
@@ -45,4 +47,5 @@ public class PaymentTransactionMapper {
 
         return model;
     }
+
 }

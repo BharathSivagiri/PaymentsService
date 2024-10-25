@@ -1,0 +1,9 @@
+package com.ems.PaymentsService.exceptions.custom;
+
+public class TransactionNotFoundException extends RuntimeException
+{
+    public TransactionNotFoundException(String message)
+    {
+        super(message);
+    }
+}
