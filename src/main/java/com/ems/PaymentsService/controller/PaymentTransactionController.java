@@ -2,15 +2,14 @@ package com.ems.PaymentsService.controller;
 
 import com.ems.PaymentsService.dto.TransactionViewDTO;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
+import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.services.implementations.PaymentTransactionService;
-import com.ems.PaymentsService.utility.constants.ErrorMessages;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,26 +26,14 @@ public class PaymentTransactionController
         @Autowired
         PaymentTransactionService paymentTransactionService;
 
-    @PostMapping("/registration")
-    @Operation(summary = "Register for event", description = "Register for an event and create a payment transaction")
-    public ResponseEntity<String> registerForEvent(@RequestBody PaymentTransactionModel paymentTransaction)
-    {
-        log.info("Received registration request for event ID: {}", paymentTransaction.getEventId());
+        @Autowired
+        PaymentTransactionRepository paymentTransactionRepository;
 
-        paymentTransactionService.createPaymentTransaction(paymentTransaction);
-
-        log.info("Payment transaction created");
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ErrorMessages.SUCCESSFULLY_REGISTERED);
-    }
-
-    @PostMapping("/registration/cancel")
-    @Operation(summary = "Cancel payment transaction", description = "Cancel a payment transaction")
-    public ResponseEntity<String> cancelPaymentTransaction(@RequestBody PaymentTransactionModel model)
-    {
-        paymentTransactionService.createPaymentTransaction(model);
-        return ResponseEntity.ok(ErrorMessages.SUCCESSFULLY_CANCELLED);
+    @PostMapping("/payment/process")
+    public ResponseEntity<Integer> processPayment(@RequestBody PaymentTransactionModel request) {
+        PaymentTransactionModel response = paymentTransactionService.createPaymentTransaction(request);
+        Integer transactionId = paymentTransactionRepository.findFirstByOrderByIdDesc().getId();
+        return ResponseEntity.ok(transactionId);
     }
 
     @GetMapping("/transactions")
