@@ -37,10 +37,15 @@ public class PaymentTransactionService
     @Transactional
     public PaymentTransactionModel createPaymentTransaction(PaymentTransactionModel model) {
         log.info("Creating payment transaction for event ID: {}", model.getEventId());
+
         validatePaymentTransaction(model);
 
-        UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
-                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
+        // Find bank account by account number instead of ID
+        UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
+                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
+
+        // Set the bank ID in the model from the found account
+        model.setBankId(String.valueOf(userBankAccount.getAccountId()));
 
         UserBankAccount adminAccount = userBankAccountRepository.findById(1)
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
@@ -56,11 +61,11 @@ public class PaymentTransactionService
 
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
         entity = paymentTransactionRepository.save(entity);
-
         updateBankAccountBalance(userBankAccount, model);
 
         return paymentTransactionMapper.toModel(entity);
     }
+
 
 
     private void validatePaymentTransaction(PaymentTransactionModel model)
