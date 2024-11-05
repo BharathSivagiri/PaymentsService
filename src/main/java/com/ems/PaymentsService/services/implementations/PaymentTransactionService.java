@@ -3,6 +3,7 @@ package com.ems.PaymentsService.services.implementations;
 import com.ems.PaymentsService.dto.TransactionViewDTO;
 import com.ems.PaymentsService.entity.PaymentTransaction;
 import com.ems.PaymentsService.entity.UserBankAccount;
+import com.ems.PaymentsService.enums.PaymentStatus;
 import com.ems.PaymentsService.enums.TransactionType;
 import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
 import com.ems.PaymentsService.exceptions.custom.DataNotFoundException;
@@ -124,16 +125,21 @@ public class PaymentTransactionService
     @Transactional
     public PaymentTransactionModel createRefundTransaction(PaymentTransactionModel model) {
         log.info("Processing refund for event ID: {}", model.getEventId());
-        validatePaymentTransaction(model);
 
-        UserBankAccount userBankAccount = userBankAccountRepository.findById(Integer.parseInt(model.getBankId()))
+        // Find user's bank account using account number
+        UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
+
+        model.setBankId(String.valueOf(userBankAccount.getAccountId()));
+        model.setPaymentStatus(PaymentStatus.PAID.getStatus());
+        model.setTransactionType("CREDIT");
 
         UserBankAccount adminAccount = userBankAccountRepository.findById(1)
                 .orElseThrow(() -> new DataNotFoundException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
 
         double amount = Double.parseDouble(model.getAmountPaid());
 
+        // Process refund
         adminAccount.setAccountBalance(adminAccount.getAccountBalance() - amount);
         userBankAccountRepository.save(adminAccount);
 
@@ -141,8 +147,11 @@ public class PaymentTransactionService
         userBankAccountRepository.save(userBankAccount);
 
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
+        // Log the refund processing
+        log.info("Refund processed for event ID: {}", model.getEventId());
         return paymentTransactionMapper.toModel(paymentTransactionRepository.save(entity));
     }
+
 
     public List<TransactionViewDTO> getAllTransactions()
     {
