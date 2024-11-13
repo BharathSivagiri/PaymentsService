@@ -11,8 +11,8 @@ import java.util.Optional;
 @Repository
 public interface UserBankAccountRepository extends JpaRepository<UserBankAccount, Integer>
 {
-    Optional<UserBankAccount> findByUserAccountNoAndRecStatus(String accountNumber, DBRecordStatus recStatus);
+    Optional<UserBankAccount> findByUserAccountNoAndRecordStatus(String accountNumber, DBRecordStatus recordStatus);
 
-    Optional<UserBankAccount> findByAccountIdAndRecStatus(Integer accountId, DBRecordStatus recStatus);
+    Optional<UserBankAccount> findByAccountIdAndRecordStatus(Integer accountId, DBRecordStatus recordStatus);
 }
 

@@ -19,12 +19,12 @@ public class BusinessPaymentValidator {
     UserBankAccountRepository userBankAccountRepository;
 
     public UserBankAccount validateBankAccount(String accountNumber) {
-        return userBankAccountRepository.findByUserAccountNoAndRecStatus(accountNumber, DBRecordStatus.ACTIVE)
+        return userBankAccountRepository.findByUserAccountNoAndRecordStatus(accountNumber, DBRecordStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
     }
 
     public UserBankAccount validateAdminAccount() {
-        return userBankAccountRepository.findByAccountIdAndRecStatus(1, DBRecordStatus.ACTIVE)
+        return userBankAccountRepository.findByAccountIdAndRecordStatus(1, DBRecordStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
     }
 
