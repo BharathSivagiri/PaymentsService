@@ -7,13 +7,15 @@ import com.ems.PaymentsService.enums.PaymentStatus;
 import com.ems.PaymentsService.enums.TransactionType;
 import com.ems.PaymentsService.exceptions.custom.BasicValidationException;
 import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
-import com.ems.PaymentsService.exceptions.custom.DataNotFoundException;
+import com.ems.PaymentsService.mapper.BankAccountBalanceMapper;
 import com.ems.PaymentsService.mapper.PaymentTransactionMapper;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.repositories.UserBankAccountRepository;
 import com.ems.PaymentsService.utility.constants.ErrorMessages;
 
+import com.ems.PaymentsService.validators.BasicPaymentValidator;
+import com.ems.PaymentsService.validators.BusinessPaymentValidator;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,133 +38,71 @@ public class PaymentTransactionService
     @Autowired
     PaymentTransactionMapper paymentTransactionMapper;
 
+    @Autowired
+    BasicPaymentValidator basicValidator;
+
+    @Autowired
+    BusinessPaymentValidator businessValidator;
+
+    @Autowired
+    BankAccountBalanceMapper bankAccountBalanceMapper;
+
     @Transactional
     public PaymentTransactionModel createPaymentTransaction(PaymentTransactionModel model) {
         log.info("Creating payment transaction for event ID: {}", model.getEventId());
 
-        validatePaymentTransaction(model);
+        basicValidator.validatePaymentTransaction(model);
 
-        // Find bank account by account number instead of ID
-        UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
-                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
+        UserBankAccount userBankAccount = businessValidator.validateBankAccount(model.getAccountNumber());
+        UserBankAccount adminAccount = businessValidator.validateAdminAccount();
 
-        // Set the bank ID in the model from the found account
-        model.setBankId(String.valueOf(userBankAccount.getAccountId()));
+        double amount = Double.parseDouble(model.getAmountPaid());
+        boolean isDebit = TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType());
 
-        UserBankAccount adminAccount = userBankAccountRepository.findById(1)
-                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
-
-        if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType())) {
-            double amount = Double.parseDouble(model.getAmountPaid());
-            if (userBankAccount.getAccountBalance() < amount) {
-                throw new BusinessValidationException(ErrorMessages.INSUFFICIENT_BALANCE);
-            }
-            adminAccount.setAccountBalance(adminAccount.getAccountBalance() + amount);
+        if (isDebit) {
+            businessValidator.validateBalance(userBankAccount, amount);
+            bankAccountBalanceMapper.updateAdminAccountBalance(adminAccount, amount, true);
             userBankAccountRepository.save(adminAccount);
         }
 
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
         entity = paymentTransactionRepository.save(entity);
-        updateBankAccountBalance(userBankAccount, model);
+
+        bankAccountBalanceMapper.updateUserAccountBalance(userBankAccount, amount, isDebit);
+        userBankAccountRepository.save(userBankAccount);
 
         return paymentTransactionMapper.toModel(entity);
-    }
-
-
-
-    private void validatePaymentTransaction(PaymentTransactionModel model)
-    {
-        log.debug("Validating payment transaction");
-
-        if (model.getAmountPaid() == null || Double.parseDouble(model.getAmountPaid()) <= 0)
-        {
-            throw new BasicValidationException(ErrorMessages.AMOUNT_VALIDATION);
-        }
-
-        if (model.getEventId() == null || model.getEventId().trim().isEmpty())
-        {
-            throw new BasicValidationException(ErrorMessages.EVENT_ID_NOT_FOUND);
-        }
-
-        if (model.getPaymentMode() == null)
-        {
-            throw new BasicValidationException(ErrorMessages.PAYMENT_MODE_NOT_FOUND);
-        }
-
-        if (model.getTransactionType() == null)
-        {
-            throw new BasicValidationException(ErrorMessages.TRANSACTION_TYPE_NOT_FOUND);
-        }
-
-        if (model.getPaymentStatus() == null)
-        {
-            throw new BasicValidationException(ErrorMessages.PAYMENT_STATUS_NOT_FOUND);
-        }
-
-        log.debug("Payment transaction validation completed");
-    }
-
-    private void updateBankAccountBalance(UserBankAccount account, PaymentTransactionModel model)
-    {
-        double amount = Double.parseDouble(model.getAmountPaid());
-        if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType()))
-        {
-            if (account.getAccountBalance() < amount)
-            {
-                throw new BusinessValidationException(ErrorMessages.INSUFFICIENT_BALANCE);
-            }
-            account.setAccountBalance(account.getAccountBalance() - amount);
-        }
-        else
-        {
-            account.setAccountBalance(account.getAccountBalance() + amount);
-        }
-        account.setLastUpdatedDate(String.valueOf(LocalDateTime.now()));
-        userBankAccountRepository.save(account);
-        log.info("Bank account balance updated for account ID: {}", account.getAccountId());
     }
 
     @Transactional
     public PaymentTransactionModel createRefundTransaction(PaymentTransactionModel model) {
         log.info("Processing refund for event ID: {}", model.getEventId());
 
-        // Find user's bank account using account number
-        UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
-                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ID_NOT_FOUND));
+        basicValidator.validatePaymentTransaction(model);
 
-        model.setBankId(String.valueOf(userBankAccount.getAccountId()));
-        model.setPaymentStatus(PaymentStatus.PAID.getStatus());
-        model.setTransactionType("CREDIT");
+        UserBankAccount userBankAccount = businessValidator.validateBankAccount(model.getAccountNumber());
+        UserBankAccount adminAccount = businessValidator.validateAdminAccount();
 
-        UserBankAccount adminAccount = userBankAccountRepository.findById(1)
-                .orElseThrow(() -> new BasicValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
+        paymentTransactionMapper.prepareRefundModel(model, userBankAccount);
 
         double amount = Double.parseDouble(model.getAmountPaid());
+        businessValidator.validateBalance(adminAccount, amount);
 
-        // Process refund
-        adminAccount.setAccountBalance(adminAccount.getAccountBalance() - amount);
+        bankAccountBalanceMapper.processRefundBalances(adminAccount, userBankAccount, amount);
         userBankAccountRepository.save(adminAccount);
-
-        userBankAccount.setAccountBalance(userBankAccount.getAccountBalance() + amount);
         userBankAccountRepository.save(userBankAccount);
 
         PaymentTransaction entity = paymentTransactionMapper.toEntity(model);
-        // Log the refund processing
         log.info("Refund processed for event ID: {}", model.getEventId());
         return paymentTransactionMapper.toModel(paymentTransactionRepository.save(entity));
     }
 
-
-    public List<TransactionViewDTO> getAllTransactions()
-    {
+    public List<TransactionViewDTO> getAllTransactions() {
         log.info("Retrieving all payment transactions");
         List<PaymentTransaction> transactions = paymentTransactionRepository.findAll();
 
-        if (transactions.isEmpty())
-        {
-            log.error("No transactions found in the system");
-            throw new BusinessValidationException(ErrorMessages.TRANSACTIONS_NOT_FOUND);
-        }
+        businessValidator.validateTransactionsExist(transactions);
+
         log.info("Found {} transactions", transactions.size());
         return transactions.stream()
                 .map(paymentTransactionMapper::toModel)

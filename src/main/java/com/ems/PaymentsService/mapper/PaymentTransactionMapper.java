@@ -1,6 +1,7 @@
 package com.ems.PaymentsService.mapper;
 
 import com.ems.PaymentsService.entity.PaymentTransaction;
+import com.ems.PaymentsService.entity.UserBankAccount;
 import com.ems.PaymentsService.enums.DBRecordStatus;
 import com.ems.PaymentsService.enums.PaymentMode;
 import com.ems.PaymentsService.enums.PaymentStatus;
@@ -47,5 +48,12 @@ public class PaymentTransactionMapper {
 
         return model;
     }
+
+    public void prepareRefundModel(PaymentTransactionModel model, UserBankAccount userBankAccount) {
+        model.setBankId(String.valueOf(userBankAccount.getAccountId()));
+        model.setPaymentStatus(PaymentStatus.PAID.getStatus());
+        model.setTransactionType("CREDIT");
+    }
+
 
 }
