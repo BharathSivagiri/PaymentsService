@@ -2,6 +2,7 @@ package com.ems.PaymentsService.validators;
 
 import com.ems.PaymentsService.entity.PaymentTransaction;
 import com.ems.PaymentsService.entity.UserBankAccount;
+import com.ems.PaymentsService.enums.DBRecordStatus;
 import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
 import com.ems.PaymentsService.repositories.UserBankAccountRepository;
 import com.ems.PaymentsService.utility.constants.ErrorMessages;
@@ -15,15 +16,15 @@ import java.util.List;
 @Slf4j
 public class BusinessPaymentValidator {
     @Autowired
-    private UserBankAccountRepository userBankAccountRepository;
+    UserBankAccountRepository userBankAccountRepository;
 
     public UserBankAccount validateBankAccount(String accountNumber) {
-        return userBankAccountRepository.findByUserAccountNo(accountNumber)
+        return userBankAccountRepository.findByUserAccountNoAndRecStatus(accountNumber, DBRecordStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
     }
 
     public UserBankAccount validateAdminAccount() {
-        return userBankAccountRepository.findById(1)
+        return userBankAccountRepository.findByAccountIdAndRecStatus(1, DBRecordStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
     }
 
