@@ -1,5 +1,6 @@
 package com.ems.PaymentsService.exceptions.global;
 
+import com.ems.PaymentsService.exceptions.custom.BasicValidationException;
 import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
 
 import com.ems.PaymentsService.exceptions.custom.PaymentProcessingException;
@@ -37,5 +38,11 @@ public class GlobalExceptionHandler
                 ex.getMessage()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(BasicValidationException.class)
+    public ResponseEntity<String> handleBasicValidationException(BasicValidationException ex)
+    {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 }

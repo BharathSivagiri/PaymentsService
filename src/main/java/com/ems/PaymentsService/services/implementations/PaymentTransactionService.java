@@ -5,6 +5,7 @@ import com.ems.PaymentsService.entity.PaymentTransaction;
 import com.ems.PaymentsService.entity.UserBankAccount;
 import com.ems.PaymentsService.enums.PaymentStatus;
 import com.ems.PaymentsService.enums.TransactionType;
+import com.ems.PaymentsService.exceptions.custom.BasicValidationException;
 import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
 import com.ems.PaymentsService.exceptions.custom.DataNotFoundException;
 import com.ems.PaymentsService.mapper.PaymentTransactionMapper;
@@ -43,13 +44,13 @@ public class PaymentTransactionService
 
         // Find bank account by account number instead of ID
         UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
-                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ACCOUNT_NOT_FOUND));
 
         // Set the bank ID in the model from the found account
         model.setBankId(String.valueOf(userBankAccount.getAccountId()));
 
         UserBankAccount adminAccount = userBankAccountRepository.findById(1)
-                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
 
         if (TransactionType.DEBIT.name().equalsIgnoreCase(model.getTransactionType())) {
             double amount = Double.parseDouble(model.getAmountPaid());
@@ -75,28 +76,27 @@ public class PaymentTransactionService
 
         if (model.getAmountPaid() == null || Double.parseDouble(model.getAmountPaid()) <= 0)
         {
-            throw new BusinessValidationException(ErrorMessages.AMOUNT_VALIDATION);
+            throw new BasicValidationException(ErrorMessages.AMOUNT_VALIDATION);
         }
 
         if (model.getEventId() == null || model.getEventId().trim().isEmpty())
         {
-            throw new BusinessValidationException(ErrorMessages.EVENT_ID_NOT_FOUND);
+            throw new BasicValidationException(ErrorMessages.EVENT_ID_NOT_FOUND);
         }
 
         if (model.getPaymentMode() == null)
         {
-            throw new BusinessValidationException(ErrorMessages.PAYMENT_MODE_NOT_FOUND);
+            throw new BasicValidationException(ErrorMessages.PAYMENT_MODE_NOT_FOUND);
         }
 
         if (model.getTransactionType() == null)
         {
-            throw new BusinessValidationException(ErrorMessages.TRANSACTION_TYPE_NOT_FOUND);
+            throw new BasicValidationException(ErrorMessages.TRANSACTION_TYPE_NOT_FOUND);
         }
-
 
         if (model.getPaymentStatus() == null)
         {
-            throw new BusinessValidationException(ErrorMessages.PAYMENT_STATUS_NOT_FOUND);
+            throw new BasicValidationException(ErrorMessages.PAYMENT_STATUS_NOT_FOUND);
         }
 
         log.debug("Payment transaction validation completed");
@@ -128,14 +128,14 @@ public class PaymentTransactionService
 
         // Find user's bank account using account number
         UserBankAccount userBankAccount = userBankAccountRepository.findByUserAccountNo(model.getAccountNumber())
-                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.BANK_ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessValidationException(ErrorMessages.BANK_ID_NOT_FOUND));
 
         model.setBankId(String.valueOf(userBankAccount.getAccountId()));
         model.setPaymentStatus(PaymentStatus.PAID.getStatus());
         model.setTransactionType("CREDIT");
 
         UserBankAccount adminAccount = userBankAccountRepository.findById(1)
-                .orElseThrow(() -> new DataNotFoundException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
+                .orElseThrow(() -> new BasicValidationException(ErrorMessages.ADMIN_ACCOUNT_NOT_FOUND));
 
         double amount = Double.parseDouble(model.getAmountPaid());
 
@@ -161,7 +161,7 @@ public class PaymentTransactionService
         if (transactions.isEmpty())
         {
             log.error("No transactions found in the system");
-            throw new DataNotFoundException(ErrorMessages.TRANSACTIONS_NOT_FOUND);
+            throw new BusinessValidationException(ErrorMessages.TRANSACTIONS_NOT_FOUND);
         }
         log.info("Found {} transactions", transactions.size());
         return transactions.stream()
