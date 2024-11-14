@@ -3,16 +3,12 @@ package com.ems.PaymentsService.services.implementations;
 import com.ems.PaymentsService.dto.TransactionViewDTO;
 import com.ems.PaymentsService.entity.PaymentTransaction;
 import com.ems.PaymentsService.entity.UserBankAccount;
-import com.ems.PaymentsService.enums.PaymentStatus;
 import com.ems.PaymentsService.enums.TransactionType;
-import com.ems.PaymentsService.exceptions.custom.BasicValidationException;
-import com.ems.PaymentsService.exceptions.custom.BusinessValidationException;
 import com.ems.PaymentsService.mapper.BankAccountBalanceMapper;
 import com.ems.PaymentsService.mapper.PaymentTransactionMapper;
 import com.ems.PaymentsService.model.PaymentTransactionModel;
 import com.ems.PaymentsService.repositories.PaymentTransactionRepository;
 import com.ems.PaymentsService.repositories.UserBankAccountRepository;
-import com.ems.PaymentsService.utility.constants.ErrorMessages;
 
 import com.ems.PaymentsService.validators.BasicPaymentValidator;
 import com.ems.PaymentsService.validators.BusinessPaymentValidator;
@@ -21,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
