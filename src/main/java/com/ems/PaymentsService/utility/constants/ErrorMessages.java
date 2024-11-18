@@ -16,4 +16,5 @@ public class ErrorMessages
     public static final String INVALID_PAYMENT_STATUS = "Payment status not found";
     public static final String INVALID_TRANSACTION_TYPE = "Transaction type not found";
     public static final String ADMIN_ACCOUNT_NOT_FOUND = "Admin account not found";
+    public static final String BANK_ACCOUNT_NOT_FOUND = "Bank account not found";
 }

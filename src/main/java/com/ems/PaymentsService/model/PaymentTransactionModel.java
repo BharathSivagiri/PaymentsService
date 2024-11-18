@@ -23,6 +23,8 @@ public class PaymentTransactionModel
     @NotBlank(message = "User ID is required")
     private String userId;
 
+    private String accountNumber;
+
     private String bankId;
 
     @NotBlank(message = "Transaction type is required")
